@@ -5,33 +5,49 @@ import { useTheme } from "@/hooks/use-theme";
 
 const links = ["Courses", "Paths", "For Business", "Community"];
 
-export function Navbar() {
+interface NavbarProps {
+  onScrollToSection: (section: string) => void;
+}
+
+export function Navbar({ onScrollToSection }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggle } = useTheme();
+
+  const handleNavClick = (link: string) => {
+    onScrollToSection(link);
+    setMobileOpen(false); // Closes mobile menu after clicking
+  };
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 glass-strong">
+    <nav className="fixed top-0 left-0 right-0 z-40 glass-strong border-b border-border/50">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
         <a href="/" className="flex items-center gap-2">
-          
-
-          
+          <GraduationCap className="w-6 h-6 text-primary" />
           <span className="text-lg font-bold text-foreground">Smarty</span>
         </a>
 
-        {/* Desktop */}
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center ml-10 gap-8">
-          {links.map((l) =>
-          <a key={l} href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          {links.map((l) => (
+            <button 
+              key={l} 
+              onClick={() => handleNavClick(l)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
               {l}
-            </a>
-          )}
+            </button>
+          ))}
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <button onClick={toggle} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" aria-label="Toggle theme">
+          <button 
+            onClick={toggle} 
+            className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" 
+            aria-label="Toggle theme"
+          >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-          <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <button className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3">
             Sign In
           </button>
           <button className="gradient-primary text-primary-foreground text-sm font-medium px-5 py-2 rounded-xl hover:opacity-90 transition-opacity">
@@ -40,32 +56,49 @@ export function Navbar() {
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        <button 
+          className="md:hidden text-foreground p-1" 
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
+      {/* Mobile Menu */}
       <AnimatePresence>
-        {mobileOpen &&
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="md:hidden glass-strong border-t border-border overflow-hidden">
-          
-            <div className="px-4 py-4 space-y-3">
-              {links.map((l) =>
-            <a key={l} href="#" className="block text-sm text-muted-foreground hover:text-foreground">
+        {mobileOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden glass-strong border-t border-border overflow-hidden"
+          >
+            <div className="px-4 py-6 space-y-4">
+              {links.map((l) => (
+                <button 
+                  key={l} 
+                  onClick={() => handleNavClick(l)}
+                  className="block w-full text-left text-base font-medium text-muted-foreground hover:text-foreground py-1"
+                >
                   {l}
-                </a>
-            )}
-              <button className="w-full gradient-primary text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-xl mt-2">
-                Get Started
-              </button>
+                </button>
+              ))}
+              <div className="pt-4 space-y-3">
+                <button className="w-full gradient-primary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl">
+                  Get Started
+                </button>
+                <button 
+                  onClick={toggle}
+                  className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"
+                >
+                  {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  Toggle Theme
+                </button>
+              </div>
             </div>
           </motion.div>
-        }
+        )}
       </AnimatePresence>
-    </nav>);
-
+    </nav>
+  );
 }

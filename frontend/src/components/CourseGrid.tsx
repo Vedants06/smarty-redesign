@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Star, Clock, Users, BadgeCheck, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -47,9 +47,16 @@ export function CourseGrid({ searchQuery = "" }: CourseGridProps) {
   }, [searchQuery, selectedCategory, selectedLevel, selectedPrice]);
 
   const activeFilterCount = [selectedCategory, selectedLevel, selectedPrice].filter((f) => f !== "All").length;
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (searchQuery && filtered.length > 0) {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [searchQuery, filtered.length]);
 
   return (
-    <section id="courses" className="relative z-10 py-20 px-4 bg-background">
+    <section ref={sectionRef} id="courses" className="relative z-10 py-20 px-4 bg-background">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4 mb-3">

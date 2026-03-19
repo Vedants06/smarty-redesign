@@ -11,6 +11,8 @@ export interface CourseData {
   category: string;
   bestseller?: boolean;
   level: string;
+  isFree: boolean;
+  stripeProductId?: string; // Stripe Price ID — set for all paid courses
 }
 
 export interface CourseDetail extends CourseData {
@@ -25,6 +27,7 @@ export interface CourseDetail extends CourseData {
   language: string;
   subtitles: string[];
   whatYouLearn: string[];
+  youtubePlaylistId?: string; // YouTube playlist ID — used when user has access
 }
 
 export const courses: CourseData[] = [
@@ -32,37 +35,49 @@ export const courses: CourseData[] = [
     id: 1, title: "Complete AI & Machine Learning Bootcamp 2025", instructor: "Dr. Sarah Chen",
     rating: 4.9, students: "142K", duration: "52h", price: "$12.99", originalPrice: "$89.99",
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80",
-    category: "Artificial Intelligence", bestseller: true, level: "Beginner"
+    category: "Artificial Intelligence", bestseller: true, level: "Beginner",
+    isFree: false,
+    stripeProductId: "price_AI_BOOTCAMP_2025", // Replace with real Stripe Price ID
   },
   {
-    id: 2, title: "MERN Stack: Full-Stack Web Development Masterclass", instructor: "James Rodriguez",
-    rating: 4.8, students: "98K", duration: "48h", price: "$11.99", originalPrice: "$79.99",
+    id: 2, title: "MERN Stack: Full-Stack Web Development Masterclass", instructor: "Hitesh Choudhary",
+    rating: 4.8, students: "98K", duration: "48h", price: "$0", originalPrice: "$79.99",
     image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&q=80",
-    category: "Web Development", bestseller: true, level: "Intermediate"
+    category: "Web Development", bestseller: true, level: "Intermediate",
+    isFree: true,
+    // No stripeProductId — free course
   },
   {
     id: 3, title: "AWS Solutions Architect – Professional Certification", instructor: "Priya Patel",
     rating: 4.7, students: "67K", duration: "38h", price: "$14.99", originalPrice: "$99.99",
     image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80",
-    category: "Cloud Computing", bestseller: false, level: "Advanced"
+    category: "Cloud Computing", bestseller: false, level: "Advanced",
+    isFree: false,
+    stripeProductId: "price_AWS_ARCHITECT", // Replace with real Stripe Price ID
   },
   {
     id: 4, title: "Deep Learning with PyTorch & Transformers", instructor: "Alex Kim",
     rating: 4.9, students: "53K", duration: "42h", price: "$13.99", originalPrice: "$94.99",
     image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&q=80",
-    category: "Artificial Intelligence", bestseller: true, level: "Advanced"
+    category: "Artificial Intelligence", bestseller: true, level: "Advanced",
+    isFree: false,
+    stripeProductId: "price_DEEP_LEARNING_PT", // Replace with real Stripe Price ID
   },
   {
     id: 5, title: "Next.js & React – The Complete Guide (2025)", instructor: "Maria Santos",
     rating: 4.8, students: "115K", duration: "44h", price: "$10.99", originalPrice: "$84.99",
     image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80",
-    category: "Web Development", bestseller: false, level: "Beginner"
+    category: "Web Development", bestseller: false, level: "Beginner",
+    isFree: false,
+    stripeProductId: "price_NEXTJS_COMPLETE", // Replace with real Stripe Price ID
   },
   {
     id: 6, title: "Kubernetes & Docker: DevOps Deployment Mastery", instructor: "David Okonkwo",
     rating: 4.7, students: "45K", duration: "34h", price: "$12.99", originalPrice: "$74.99",
     image: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=600&q=80",
-    category: "Cloud Computing", bestseller: false, level: "Intermediate"
+    category: "Cloud Computing", bestseller: false, level: "Intermediate",
+    isFree: false,
+    stripeProductId: "price_K8S_DOCKER", // Replace with real Stripe Price ID
   },
 ];
 
@@ -119,14 +134,17 @@ export const courseDetails: Record<number, CourseDetail> = {
   },
   2: {
     ...courses[1],
-    description: "Become a full-stack developer with the MERN stack. Build and deploy production-grade applications using MongoDB, Express.js, React, and Node.js. Includes authentication, payments, real-time features, and deployment to AWS.",
-    instructorBio: "James Rodriguez is a senior software engineer with 10+ years of experience at Meta and Stripe. He specializes in full-stack JavaScript development and has mentored over 500 developers through his courses and workshops.",
+    description: "Become a full-stack developer with the MERN stack. Build and deploy production-grade applications using MongoDB, Express.js, React, and Node.js. Includes authentication, payments, real-time features, and deployment to AWS. This course uses the Chai aur Code MERN playlist — completely free, no payment required.",
+    instructorBio: "Hitesh Choudhary is a full-stack developer, educator, and founder of Chai aur Code. With millions of YouTube subscribers and a passion for teaching, he breaks down complex web development concepts into practical, beginner-friendly lessons.",
     instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
     instructorCourses: 5,
     instructorStudents: "210K",
     lastUpdated: "February 2025",
-    language: "English",
-    subtitles: ["English", "Portuguese", "French"],
+    language: "Hindi / English",
+    subtitles: ["English", "Hindi"],
+    // Chai aur Code - Complete MERN Stack playlist
+    // https://www.youtube.com/playlist?list=PLu71SKxNbfoBGh_8p_NS-ZAh6463zF8dN
+    youtubePlaylistId: "PLu71SKxNbfoBGh_8p_NS-ZAh6463zF8dN",
     whatYouLearn: [
       "Build full-stack apps with MongoDB, Express, React, Node",
       "Implement JWT authentication and OAuth",

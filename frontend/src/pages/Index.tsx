@@ -90,19 +90,19 @@ const Index = () => {
       <main className="pb-16 md:pb-0 pt-16">
         <HeroSection query={searchQuery} onQueryChange={setSearchQuery} />
 
-        <div ref={coursesRef} className="scroll-mt-20">
+        <div ref={coursesRef} id="courses" className="scroll-mt-20">
           <CourseGrid searchQuery={searchQuery} />
         </div>
 
-        <div ref={pathsRef} className="scroll-mt-20">
+        <div ref={pathsRef} id="paths" className="scroll-mt-20"> 
           <LearningPaths />
         </div>
 
-        <div ref={pricingRef} className="scroll-mt-20">
+        <div ref={pricingRef} id="pricing" className="scroll-mt-20">  
           <Pricing />
         </div>
 
-        <div ref={communityRef} className="scroll-mt-20">
+        <div ref={communityRef} id="community" className="scroll-mt-20">
           <SocialProof />
         </div>
 

@@ -1,8 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Star, Clock, Users, BadgeCheck, Filter } from "lucide-react";
+import { Star, Clock, Users, BadgeCheck, Filter, Play, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { courses } from "@/lib/courseData";
+import { useAuth } from "@/lib/auth-context";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const allCategories = [...new Set(courses.map((c) => c.category))];
 const allLevels = [...new Set(courses.map((c) => c.level))];
@@ -17,10 +20,27 @@ interface CourseGridProps {
 }
 
 export function CourseGrid({ searchQuery = "" }: CourseGridProps) {
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedLevel, setSelectedLevel] = useState<string>("All");
   const [selectedPrice, setSelectedPrice] = useState<string>("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [purchasedIds, setPurchasedIds] = useState<number[]>([]);
+
+  // ── Fetch user's purchased courses ──────────────────────────────────────
+  useEffect(() => {
+    async function fetchPurchased() {
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const data = userDoc.data();
+        setPurchasedIds(data?.purchasedCourses ?? []);
+      } catch {
+        setPurchasedIds([]);
+      }
+    }
+    fetchPurchased();
+  }, [user]);
 
   const filtered = useMemo(() => {
     return courses.filter((c) => {
@@ -54,6 +74,9 @@ export function CourseGrid({ searchQuery = "" }: CourseGridProps) {
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [searchQuery, filtered.length]);
+
+  const hasAccess = (courseId: number, isFree: boolean) =>
+    isFree || purchasedIds.includes(courseId);
 
   return (
     <section ref={sectionRef} id="courses" className="relative z-10 py-20 px-4 bg-background">
@@ -162,50 +185,87 @@ export function CourseGrid({ searchQuery = "" }: CourseGridProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((course) => (
-              <article key={course.id} className="group">
-                <Link
-                  to={`/course/${course.id}`}
-                  className="block glass rounded-2xl overflow-hidden cursor-pointer shadow-card hover:shadow-glow transition-all hover:-translate-y-1.5"
-                >
-                  <div className="relative overflow-hidden h-44">
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    {course.bestseller && (
-                      <span className="absolute top-3 left-3 gradient-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-                        <BadgeCheck className="w-3 h-3" /> Bestseller
-                      </span>
-                    )}
-                    <span className="absolute top-3 right-3 glass text-foreground text-xs px-2 py-1 rounded-full">
-                      {course.level}
-                    </span>
-                  </div>
-                  <div className="p-5">
-                    <p className="text-xs text-primary font-medium mb-2">{course.category}</p>
-                    <h3 className="font-semibold text-foreground leading-tight mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                      {course.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">{course.instructor}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                        <span className="text-foreground font-semibold">{course.rating}</span>
-                      </span>
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{course.students}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{course.duration}</span>
+            {filtered.map((course) => {
+              const owned = hasAccess(course.id, course.isFree);
+              return (
+                <article key={course.id} className="group">
+                  <Link
+                    to={`/course/${course.id}`}
+                    className="block glass rounded-2xl overflow-hidden cursor-pointer shadow-card hover:shadow-glow transition-all hover:-translate-y-1.5"
+                  >
+                    <div className="relative overflow-hidden h-44">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+
+                      {/* ── Top-left badge: Bestseller or Enrolled/Free ── */}
+                      <div className="absolute top-3 left-3 flex flex-col gap-1">
+                        {course.bestseller && !owned && (
+                          <span className="gradient-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+                            <BadgeCheck className="w-3 h-3" /> Bestseller
+                          </span>
+                        )}
+                        {owned && (
+                          <span className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 ${
+                            course.isFree
+                              ? "bg-green-500/90 text-white"
+                              : "gradient-primary text-primary-foreground"
+                          }`}>
+                            <Play className="w-3 h-3" />
+                            {course.isFree ? "Free" : "Enrolled"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* ── Top-right: level or lock ── */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1">
+                        {!owned && !course.isFree && (
+                          <span className="glass text-foreground/60 p-1 rounded-full">
+                            <Lock className="w-3 h-3" />
+                          </span>
+                        )}
+                        <span className="glass text-foreground text-xs px-2 py-1 rounded-full">
+                          {course.level}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-foreground">{course.price}</span>
-                      <span className="text-sm text-muted-foreground line-through">{course.originalPrice}</span>
+
+                    <div className="p-5">
+                      <p className="text-xs text-primary font-medium mb-2">{course.category}</p>
+                      <h3 className="font-semibold text-foreground leading-tight mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                        {course.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">{course.instructor}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
+                        <span className="flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                          <span className="text-foreground font-semibold">{course.rating}</span>
+                        </span>
+                        <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{course.students}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{course.duration}</span>
+                      </div>
+
+                      {/* ── Price row ── */}
+                      {owned ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-primary flex items-center gap-1">
+                            <Play className="w-3.5 h-3.5" /> Continue Learning
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-foreground">{course.price}</span>
+                          <span className="text-sm text-muted-foreground line-through">{course.originalPrice}</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              </article>
-            ))}
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

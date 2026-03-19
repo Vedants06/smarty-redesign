@@ -1,11 +1,11 @@
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { load } from "@cashfreepayments/cashfree-js";
-
-const ALL_COURSE_IDS = [1, 2, 3, 4, 5, 6];
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const plans = [
   {
@@ -59,35 +59,50 @@ const plans = [
   },
 ];
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
+const item = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
 export function Pricing() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const navigate  = useNavigate();
+  const { user }  = useAuth();
+  const [loading, setLoading]   = useState(false);
+  const [isPro, setIsPro]       = useState(false);
+
+  // ── Check if user already has Pro ────────────────────────────────────────
+  useEffect(() => {
+    async function checkPro() {
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const data    = userDoc.data();
+        // Pro = has plan:"pro" OR has all 6 courses purchased
+        const purchased: number[] = data?.purchasedCourses ?? [];
+        const hasPro = data?.plan === "pro" || purchased.length >= 6;
+        setIsPro(hasPro);
+      } catch {
+        setIsPro(false);
+      }
+    }
+    checkPro();
+  }, [user]);
 
   const handleCTA = async (planKey: string) => {
     if (planKey === "free") {
-      // Redirect directly to the free MERN course
       navigate("/course/2");
       return;
     }
 
     if (planKey === "teams") {
-      // Open mail client for sales contact
       window.location.href = "mailto:sales@smarty.com?subject=Teams Plan Inquiry&body=Hi, I'm interested in the Smarty Teams plan.";
       return;
     }
 
-    // Pro plan — Cashfree checkout
+    // Pro — already subscribed
+    if (isPro) {
+      navigate("/profile");
+      return;
+    }
+
     if (!user) {
       navigate("/login?redirect=/#pricing");
       return;
@@ -95,10 +110,10 @@ export function Pricing() {
 
     setLoading(true);
     try {
-      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const base      = import.meta.env.BASE_URL.replace(/\/$/, "");
       const returnUrl = window.location.origin + base + "/#/?pro=success&order_id={order_id}";
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/create-pro-order`, {
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/create-pro-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,10 +131,7 @@ export function Pricing() {
         mode: (import.meta.env.VITE_CASHFREE_ENV as "sandbox" | "production") || "sandbox",
       });
 
-      cashfree.checkout({
-        paymentSessionId: data.paymentSessionId,
-        redirectTarget:   "_self",
-      });
+      cashfree.checkout({ paymentSessionId: data.paymentSessionId, redirectTarget: "_self" });
 
     } catch (err) {
       console.error("Pro checkout error:", err);
@@ -145,59 +157,73 @@ export function Pricing() {
           </p>
         </motion.div>
 
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid md:grid-cols-3 gap-6"
-        >
-          {plans.map((plan) => (
-            <motion.div
-              key={plan.name}
-              variants={item}
-              className={`relative rounded-2xl p-6 md:p-8 flex flex-col ${
-                plan.highlighted
-                  ? "glass-strong border-primary/40 shadow-glow scale-[1.02]"
-                  : "glass"
-              }`}
-            >
-              {plan.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-primary text-primary-foreground text-xs font-semibold px-4 py-1 rounded-full">
-                  Most Popular
-                </span>
-              )}
+        <motion.div variants={container} initial="hidden" animate="show" className="grid md:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const isProPlan    = plan.key === "pro";
+            const alreadyPro   = isProPlan && isPro;
 
-              <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
-              <p className="text-muted-foreground text-sm mt-1 mb-5">{plan.description}</p>
-
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                <span className="text-muted-foreground text-sm ml-1">{plan.period}</span>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-secondary-foreground">
-                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => handleCTA(plan.key)}
-                disabled={loading && plan.key === "pro"}
-                className={`w-full py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
+            return (
+              <motion.div
+                key={plan.name}
+                variants={item}
+                className={`relative rounded-2xl p-6 md:p-8 flex flex-col ${
                   plan.highlighted
-                    ? "gradient-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground"
+                    ? "glass-strong border-primary/40 shadow-glow scale-[1.02]"
+                    : "glass"
                 }`}
               >
-                {loading && plan.key === "pro" && <Loader2 className="w-4 h-4 animate-spin" />}
-                {loading && plan.key === "pro" ? "Opening payment…" : plan.cta}
-              </button>
-            </motion.div>
-          ))}
+                {/* ── Most Popular badge OR Active Plan badge ── */}
+                {plan.highlighted && !alreadyPro && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-primary text-primary-foreground text-xs font-semibold px-4 py-1 rounded-full">
+                    Most Popular
+                  </span>
+                )}
+                {alreadyPro && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-semibold px-4 py-1 rounded-full flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Your Plan
+                  </span>
+                )}
+
+                <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
+                <p className="text-muted-foreground text-sm mt-1 mb-5">
+                  {alreadyPro ? "You have full access to all courses" : plan.description}
+                </p>
+
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                  <span className="text-muted-foreground text-sm ml-1">{plan.period}</span>
+                </div>
+
+                <ul className="space-y-3 mb-8 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-secondary-foreground">
+                      <Check className={`w-4 h-4 mt-0.5 shrink-0 ${alreadyPro ? "text-green-500" : "text-primary"}`} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleCTA(plan.key)}
+                  disabled={loading && isProPlan}
+                  className={`w-full py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
+                    alreadyPro
+                      ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                      : plan.highlighted
+                      ? "gradient-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {loading && isProPlan && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {alreadyPro
+                    ? "View My Courses →"
+                    : loading && isProPlan
+                    ? "Opening payment…"
+                    : plan.cta}
+                </button>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
     </section>

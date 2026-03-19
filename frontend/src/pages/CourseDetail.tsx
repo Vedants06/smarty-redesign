@@ -24,20 +24,20 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-// ─── YouTube Embed ────────────────────────────────────────────────────────────
-function YouTubeEmbed({ playlistId }: { playlistId: string }) {
+// ─── YouTube Embed (single video) ────────────────────────────────────────────
+function YouTubeEmbed({ videoId }: { videoId: string }) {
   return (
     <div className="glass rounded-2xl overflow-hidden mb-12">
       <div className="p-4 border-b border-border flex items-center gap-2">
         <Play className="w-4 h-4 text-primary" />
         <span className="text-sm font-medium text-foreground">Course Content</span>
-        <span className="ml-auto text-xs text-muted-foreground">Powered by YouTube</span>
+        <span className="ml-auto text-xs text-muted-foreground">Lesson 1 — Preview</span>
       </div>
       <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
         <iframe
           className="absolute inset-0 w-full h-full"
-          src={`https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0&modestbranding=1`}
-          title="Course Playlist"
+          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+          title="Course Video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -114,8 +114,6 @@ export default function CourseDetail() {
     setPaymentSuccess(true);
     setVerifying(true);
 
-    // Retry verify up to 5 times with 2s delay
-    // Cashfree may take a moment to mark the order as PAID on their end
     async function verifyWithRetry(attempts = 5, delayMs = 2000) {
       for (let i = 0; i < attempts; i++) {
         try {
@@ -128,20 +126,15 @@ export default function CourseDetail() {
         } catch (e) {
           console.warn(`Verify attempt ${i + 1} failed:`, e);
         }
-
-        if (i < attempts - 1) {
-          await new Promise(r => setTimeout(r, delayMs));
-        }
+        if (i < attempts - 1) await new Promise(r => setTimeout(r, delayMs));
       }
 
-      // Final Firestore check to update UI
       if (user && course) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         const data = userDoc.data();
         const purchased: number[] = data?.purchasedCourses ?? [];
         setHasPurchased(purchased.includes(course.id));
       }
-
       setVerifying(false);
     }
 
@@ -182,7 +175,6 @@ export default function CourseDetail() {
   // ── Cashfree Enroll Handler ───────────────────────────────────────────────
   const handleEnroll = async () => {
     if (course.isFree) return;
-
     if (!user) {
       navigate(`/login?redirect=/course/${course.id}`);
       return;
@@ -190,11 +182,8 @@ export default function CourseDetail() {
 
     setEnrolling(true);
     try {
-      // Build the return URL using the frontend's own origin + base path
-      // import.meta.env.BASE_URL is set by Vite from the `base` in vite.config.ts
-      const base = import.meta.env.BASE_URL.replace(/\/$/, ""); // strip trailing slash
-      const returnUrl =
-        `${window.location.origin}${base}/course/${course.id}?payment=success&order_id={order_id}`;
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const returnUrl = `${window.location.origin}${base}/course/${course.id}?payment=success&order_id={order_id}`;
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/create-order`, {
         method: "POST",
@@ -206,7 +195,7 @@ export default function CourseDetail() {
           userName:    user.displayName,
           courseTitle: course.title,
           price:       priceNum,
-          returnUrl,   // ← frontend tells backend the correct redirect URL
+          returnUrl,
         }),
       });
 
@@ -222,7 +211,6 @@ export default function CourseDetail() {
         redirectTarget:   "_self",
       });
 
-      // Don't setEnrolling(false) — page will redirect to Cashfree
     } catch (err) {
       console.error("Cashfree checkout error:", err);
       alert("Payment could not be initiated. Please try again.");
@@ -244,9 +232,7 @@ export default function CourseDetail() {
           >
             <div className="glass border border-green-500/40 text-green-400 text-sm font-medium px-6 py-3 rounded-xl flex items-center gap-2 shadow-glow">
               <Unlock className="w-4 h-4" />
-              {verifying
-                ? "Confirming your payment, please wait…"
-                : "Payment successful! You now have full access to this course."}
+              {verifying ? "Confirming your payment, please wait…" : "Payment successful! You now have full access."}
             </div>
           </motion.div>
         )}
@@ -352,9 +338,9 @@ export default function CourseDetail() {
                 {verifying ? "Confirming payment…" : "Checking access…"}
               </span>
             </div>
-          ) : hasAccess && course.youtubePlaylistId ? (
-            <YouTubeEmbed playlistId={course.youtubePlaylistId} />
-          ) : hasAccess && !course.youtubePlaylistId ? (
+          ) : hasAccess && course.youtubeVideoId ? (
+            <YouTubeEmbed videoId={course.youtubeVideoId} />
+          ) : hasAccess && !course.youtubeVideoId ? (
             <div className="glass rounded-2xl flex flex-col items-center justify-center py-16 mb-12 text-center gap-3">
               <Unlock className="w-8 h-8 text-primary" />
               <p className="text-sm font-medium text-foreground">You have access to this course</p>

@@ -12,7 +12,7 @@ export interface CourseData {
   bestseller?: boolean;
   level: string;
   isFree: boolean;
-  stripeProductId?: string; // Stripe Price ID — set for all paid courses
+  stripeProductId?: string;
 }
 
 export interface CourseDetail extends CourseData {
@@ -27,7 +27,7 @@ export interface CourseDetail extends CourseData {
   language: string;
   subtitles: string[];
   whatYouLearn: string[];
-  youtubePlaylistId?: string; // YouTube playlist ID — used when user has access
+  youtubeVideoId?: string; // single embeddable video per course
 }
 
 export const courses: CourseData[] = [
@@ -36,8 +36,7 @@ export const courses: CourseData[] = [
     rating: 4.9, students: "142K", duration: "52h", price: "$12.99", originalPrice: "$89.99",
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80",
     category: "Artificial Intelligence", bestseller: true, level: "Beginner",
-    isFree: false,
-    stripeProductId: "price_AI_BOOTCAMP_2025", // Replace with real Stripe Price ID
+    isFree: false, stripeProductId: "price_AI_BOOTCAMP_2025",
   },
   {
     id: 2, title: "MERN Stack: Full-Stack Web Development Masterclass", instructor: "Hitesh Choudhary",
@@ -45,39 +44,34 @@ export const courses: CourseData[] = [
     image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&q=80",
     category: "Web Development", bestseller: true, level: "Intermediate",
     isFree: true,
-    // No stripeProductId — free course
   },
   {
     id: 3, title: "AWS Solutions Architect – Professional Certification", instructor: "Priya Patel",
     rating: 4.7, students: "67K", duration: "38h", price: "$14.99", originalPrice: "$99.99",
     image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80",
     category: "Cloud Computing", bestseller: false, level: "Advanced",
-    isFree: false,
-    stripeProductId: "price_AWS_ARCHITECT", // Replace with real Stripe Price ID
+    isFree: false, stripeProductId: "price_AWS_ARCHITECT",
   },
   {
     id: 4, title: "Deep Learning with PyTorch & Transformers", instructor: "Alex Kim",
     rating: 4.9, students: "53K", duration: "42h", price: "$13.99", originalPrice: "$94.99",
     image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&q=80",
     category: "Artificial Intelligence", bestseller: true, level: "Advanced",
-    isFree: false,
-    stripeProductId: "price_DEEP_LEARNING_PT", // Replace with real Stripe Price ID
+    isFree: false, stripeProductId: "price_DEEP_LEARNING_PT",
   },
   {
-    id: 5, title: "Next.js & React – The Complete Guide (2025)", instructor: "Maria Santos",
+    id: 5, title: "Next.js & React – The Complete Guide (2025)", instructor: "Hitesh Choudhary",
     rating: 4.8, students: "115K", duration: "44h", price: "$10.99", originalPrice: "$84.99",
     image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80",
     category: "Web Development", bestseller: false, level: "Beginner",
-    isFree: false,
-    stripeProductId: "price_NEXTJS_COMPLETE", // Replace with real Stripe Price ID
+    isFree: false, stripeProductId: "price_NEXTJS_COMPLETE",
   },
   {
-    id: 6, title: "Kubernetes & Docker: DevOps Deployment Mastery", instructor: "David Okonkwo",
+    id: 6, title: "Kubernetes & Docker: DevOps Deployment Mastery", instructor: "Hitesh Choudhary",
     rating: 4.7, students: "45K", duration: "34h", price: "$12.99", originalPrice: "$74.99",
     image: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=600&q=80",
     category: "Cloud Computing", bestseller: false, level: "Intermediate",
-    isFree: false,
-    stripeProductId: "price_K8S_DOCKER", // Replace with real Stripe Price ID
+    isFree: false, stripeProductId: "price_K8S_DOCKER",
   },
 ];
 
@@ -92,6 +86,8 @@ export const courseDetails: Record<number, CourseDetail> = {
     lastUpdated: "March 2025",
     language: "English",
     subtitles: ["English", "Spanish", "Hindi", "Japanese"],
+    // freeCodeCamp - Machine Learning with Python full course
+    youtubeVideoId: "i_LwzRVP7bg",
     whatYouLearn: [
       "Build production-ready ML models from scratch",
       "Master PyTorch, TensorFlow, and scikit-learn",
@@ -134,7 +130,7 @@ export const courseDetails: Record<number, CourseDetail> = {
   },
   2: {
     ...courses[1],
-    description: "Become a full-stack developer with the MERN stack. Build and deploy production-grade applications using MongoDB, Express.js, React, and Node.js. Includes authentication, payments, real-time features, and deployment to AWS. This course uses the Chai aur Code MERN playlist — completely free, no payment required.",
+    description: "Become a full-stack developer with the MERN stack. Build and deploy production-grade applications using MongoDB, Express.js, React, and Node.js. Includes authentication, payments, real-time features, and deployment to AWS.",
     instructorBio: "Hitesh Choudhary is a full-stack developer, educator, and founder of Chai aur Code. With millions of YouTube subscribers and a passion for teaching, he breaks down complex web development concepts into practical, beginner-friendly lessons.",
     instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
     instructorCourses: 5,
@@ -142,9 +138,8 @@ export const courseDetails: Record<number, CourseDetail> = {
     lastUpdated: "February 2025",
     language: "Hindi / English",
     subtitles: ["English", "Hindi"],
-    // Chai aur Code - Complete MERN Stack playlist
-    // https://www.youtube.com/playlist?list=PLu71SKxNbfoBGh_8p_NS-ZAh6463zF8dN
-    youtubePlaylistId: "PLu71SKxNbfoBGh_8p_NS-ZAh6463zF8dN",
+    // Chai aur Code - confirmed embeddable video
+    youtubeVideoId: "O6P86uwfdR0",
     whatYouLearn: [
       "Build full-stack apps with MongoDB, Express, React, Node",
       "Implement JWT authentication and OAuth",
@@ -173,13 +168,182 @@ export const courseDetails: Record<number, CourseDetail> = {
       ]},
     ],
     reviews: [
-      { name: "Emily W.", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80", rating: 5, date: "3 weeks ago", comment: "James is an incredible instructor. I built my first full-stack app and landed a junior dev role within 3 months of completing this course!" },
+      { name: "Emily W.", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80", rating: 5, date: "3 weeks ago", comment: "Hitesh is an incredible instructor. I built my first full-stack app and landed a junior dev role within 3 months!" },
       { name: "Raj M.", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80", rating: 5, date: "1 month ago", comment: "Very practical and project-driven. The deployment section alone was worth the price." },
+    ],
+  },
+  3: {
+    ...courses[2],
+    description: "Prepare for the AWS Solutions Architect Professional exam with hands-on labs, real-world architecture scenarios, and deep dives into all major AWS services. Covers VPC, IAM, EC2, S3, RDS, Lambda, and more.",
+    instructorBio: "Priya Patel is a certified AWS Solutions Architect with 8+ years of cloud infrastructure experience. She has helped hundreds of engineers pass AWS certifications and architect production-grade cloud systems.",
+    instructorAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+    instructorCourses: 4,
+    instructorStudents: "130K",
+    lastUpdated: "January 2025",
+    language: "English",
+    subtitles: ["English", "Hindi"],
+    // freeCodeCamp - AWS Certified Cloud Practitioner full course
+    youtubeVideoId: "ulprqHHWlng",
+    whatYouLearn: [
+      "Design highly available, fault-tolerant AWS architectures",
+      "Master VPC, subnets, security groups, and IAM",
+      "Deploy scalable applications with EC2, ECS, and Lambda",
+      "Set up CI/CD pipelines with CodePipeline and GitHub Actions",
+      "Configure RDS, DynamoDB, and ElastiCache",
+      "Pass the AWS Solutions Architect Professional exam",
+    ],
+    curriculum: [
+      { section: "AWS Fundamentals", lessons: [
+        { title: "AWS Global Infrastructure", duration: "20min" },
+        { title: "IAM: Users, Roles & Policies", duration: "45min" },
+        { title: "VPC Deep Dive", duration: "55min" },
+      ]},
+      { section: "Compute & Storage", lessons: [
+        { title: "EC2 Instance Types & AMIs", duration: "40min" },
+        { title: "S3, Glacier & Storage Gateway", duration: "38min" },
+        { title: "Lambda & Serverless Architecture", duration: "50min" },
+      ]},
+      { section: "Databases & Networking", lessons: [
+        { title: "RDS Multi-AZ & Read Replicas", duration: "42min" },
+        { title: "DynamoDB Design Patterns", duration: "48min" },
+        { title: "CloudFront & Route 53", duration: "35min" },
+      ]},
+    ],
+    reviews: [
+      { name: "Vikram S.", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80", rating: 5, date: "1 week ago", comment: "Passed my AWS exam on the first attempt! The VPC and IAM explanations are the clearest I've found anywhere." },
+      { name: "Neha R.", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80", rating: 4, date: "3 weeks ago", comment: "Excellent course. The hands-on labs really solidified the concepts for me." },
+    ],
+  },
+  4: {
+    ...courses[3],
+    description: "Go deep into neural networks, PyTorch, and transformer architectures. Build models from scratch, fine-tune LLMs, and deploy deep learning solutions. Includes projects on image classification, NLP, and generative AI.",
+    instructorBio: "Alex Kim is a research engineer with experience at DeepMind and OpenAI. He specializes in transformer architectures and has contributed to several open-source deep learning libraries.",
+    instructorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+    instructorCourses: 6,
+    instructorStudents: "98K",
+    lastUpdated: "February 2025",
+    language: "English",
+    subtitles: ["English", "Korean", "Japanese"],
+    // freeCodeCamp - PyTorch for Deep Learning full course
+    youtubeVideoId: "V_xro1bcAuA",
+    whatYouLearn: [
+      "Master PyTorch from tensors to production models",
+      "Build transformer models from scratch",
+      "Fine-tune BERT, GPT-2, and LLaMA",
+      "Computer vision with ResNet and ViT",
+      "Deploy models with FastAPI and Docker",
+      "Understand attention mechanisms deeply",
+    ],
+    curriculum: [
+      { section: "PyTorch Foundations", lessons: [
+        { title: "Tensors & Autograd", duration: "40min" },
+        { title: "Building Neural Nets with nn.Module", duration: "50min" },
+        { title: "Training Loop & Optimizers", duration: "45min" },
+      ]},
+      { section: "Computer Vision", lessons: [
+        { title: "CNNs & Transfer Learning", duration: "55min" },
+        { title: "Object Detection with YOLO", duration: "60min" },
+        { title: "Vision Transformers (ViT)", duration: "48min" },
+      ]},
+      { section: "NLP & Transformers", lessons: [
+        { title: "Attention Mechanism from Scratch", duration: "65min" },
+        { title: "Fine-tuning BERT for Classification", duration: "55min" },
+        { title: "Building a Mini GPT", duration: "70min" },
+      ]},
+    ],
+    reviews: [
+      { name: "James L.", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80", rating: 5, date: "5 days ago", comment: "Finally understand attention mechanisms! The from-scratch implementations are incredible for building real intuition." },
+      { name: "Priya M.", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80", rating: 5, date: "2 weeks ago", comment: "Best deep learning course I've taken. The transformer section alone is worth the price." },
+    ],
+  },
+  5: {
+    ...courses[4],
+    description: "Master Next.js 14 and React with hands-on projects. Learn server components, app router, server actions, authentication, and deployment. Build production-ready full-stack apps with modern React patterns.",
+    instructorBio: "Hitesh Choudhary is a full-stack developer, educator, and founder of Chai aur Code. With millions of YouTube subscribers and a passion for teaching, he breaks down complex web development concepts into practical, beginner-friendly lessons.",
+    instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
+    instructorCourses: 5,
+    instructorStudents: "210K",
+    lastUpdated: "March 2025",
+    language: "Hindi / English",
+    subtitles: ["English", "Hindi"],
+    // Traversy Media - Next.js crash course (embeds fine)
+    youtubeVideoId: "mTz0GXj8NN0",
+    whatYouLearn: [
+      "Build full-stack apps with Next.js 14 App Router",
+      "Master React Server Components and Server Actions",
+      "Implement authentication with NextAuth.js",
+      "Style with Tailwind CSS and shadcn/ui",
+      "Deploy to Vercel with CI/CD",
+      "Optimize performance with caching and ISR",
+    ],
+    curriculum: [
+      { section: "React Foundations", lessons: [
+        { title: "JSX, Components & Props", duration: "35min" },
+        { title: "Hooks: useState, useEffect, useRef", duration: "50min" },
+        { title: "Context API & State Management", duration: "42min" },
+      ]},
+      { section: "Next.js App Router", lessons: [
+        { title: "File-based Routing & Layouts", duration: "38min" },
+        { title: "Server vs Client Components", duration: "45min" },
+        { title: "Data Fetching & Caching", duration: "52min" },
+        { title: "Server Actions & Forms", duration: "40min" },
+      ]},
+      { section: "Full-Stack Features", lessons: [
+        { title: "Authentication with NextAuth", duration: "55min" },
+        { title: "Database with Prisma & PostgreSQL", duration: "60min" },
+        { title: "Deployment & Performance", duration: "35min" },
+      ]},
+    ],
+    reviews: [
+      { name: "Ananya S.", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80", rating: 5, date: "1 week ago", comment: "Built and deployed my portfolio in a week after starting this course!" },
+      { name: "Rohit K.", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80", rating: 5, date: "2 weeks ago", comment: "The server components section finally made everything click for me. Highly recommended." },
+    ],
+  },
+  6: {
+    ...courses[5],
+    description: "Learn Docker and Kubernetes from the ground up. Containerize applications, orchestrate microservices, set up CI/CD pipelines, and deploy to production Kubernetes clusters on AWS EKS and Google GKE.",
+    instructorBio: "Hitesh Choudhary is a full-stack developer, educator, and founder of Chai aur Code. With millions of YouTube subscribers and a passion for teaching, he breaks down complex web development concepts into practical, beginner-friendly lessons.",
+    instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
+    instructorCourses: 5,
+    instructorStudents: "210K",
+    lastUpdated: "January 2025",
+    language: "Hindi / English",
+    subtitles: ["English", "Hindi"],
+    // TechWorld with Nana - Docker full course (embeds fine)
+    youtubeVideoId: "3c-iBn73dDE",
+    whatYouLearn: [
+      "Containerize any application with Docker",
+      "Write production-grade Dockerfiles and Compose files",
+      "Deploy and scale with Kubernetes",
+      "Set up Helm charts and GitOps workflows",
+      "Monitor with Prometheus and Grafana",
+      "Configure CI/CD with GitHub Actions",
+    ],
+    curriculum: [
+      { section: "Docker Fundamentals", lessons: [
+        { title: "Containers vs VMs", duration: "25min" },
+        { title: "Writing Dockerfiles", duration: "40min" },
+        { title: "Docker Compose for Multi-service Apps", duration: "45min" },
+        { title: "Docker Networking & Volumes", duration: "38min" },
+      ]},
+      { section: "Kubernetes Core", lessons: [
+        { title: "Pods, Deployments & Services", duration: "50min" },
+        { title: "ConfigMaps, Secrets & Ingress", duration: "42min" },
+        { title: "Persistent Volumes & StatefulSets", duration: "48min" },
+      ]},
+      { section: "Production & CI/CD", lessons: [
+        { title: "Helm Charts & Package Management", duration: "40min" },
+        { title: "GitHub Actions Pipeline", duration: "45min" },
+        { title: "Deploying to AWS EKS", duration: "55min" },
+      ]},
+    ],
+    reviews: [
+      { name: "Suresh P.", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80", rating: 5, date: "3 days ago", comment: "Went from zero Kubernetes knowledge to deploying microservices on EKS. Excellent hands-on approach." },
+      { name: "Meera J.", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80", rating: 4, date: "1 month ago", comment: "Great course. The Docker Compose section saved me hours at work the very next day." },
     ],
   },
 };
 
-// For courses without full details, generate a sensible fallback
 export function getCourseDetail(id: number): CourseDetail | null {
   if (courseDetails[id]) return courseDetails[id];
   const course = courses.find(c => c.id === id);

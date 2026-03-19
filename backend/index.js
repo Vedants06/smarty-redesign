@@ -186,7 +186,8 @@ app.get("/verify-payment/:orderId", async (req, res) => {
   }
 });
 
-// ─── Shared helper: grant course access in Firestore ─────────────────────────
+const ALL_COURSE_IDS = [1, 2, 3, 4, 5, 6];
+
 async function grantCourseAccess(orderId) {
   const orderDoc = await db.collection("orders").doc(orderId).get();
   if (!orderDoc.exists) {
@@ -208,14 +209,114 @@ async function grantCourseAccess(orderId) {
     paidAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  // Add courseId to user's purchasedCourses array
+  // "all" = Pro plan, unlock every course
+  const coursesToUnlock = courseId === "all" ? ALL_COURSE_IDS : [courseId];
+
   await db.collection("users").doc(userId).set({
-    purchasedCourses: admin.firestore.FieldValue.arrayUnion(courseId),
-    updatedAt:        admin.firestore.FieldValue.serverTimestamp(),
+    purchasedCourses: admin.firestore.FieldValue.arrayUnion(...coursesToUnlock),
+    ...(courseId === "all" && { plan: "pro" }), // tag the user as pro
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
 
-  console.log(`✅ Course ${courseId} unlocked for user ${userId}`);
+  console.log(`✅ Unlocked courses [${coursesToUnlock}] for user ${userId}`);
 }
+
+// ─── Create Pro Subscription Order (unlocks ALL courses) ─────────────────────
+// Add this to index.js before app.listen()
+
+app.post("/create-pro-order", async (req, res) => {
+  try {
+    const { userId, userEmail, userName, returnUrl } = req.body;
+
+    if (!userId) return res.status(400).json({ error: "userId is required" });
+
+    const orderId = `pro_${userId}_${Date.now()}`;
+
+    const orderPayload = {
+      order_id:       orderId,
+      order_amount:   19, // Pro plan price in INR (update for live)
+      order_currency: "INR",
+      order_note:     "Smarty Pro — All Courses Access",
+      customer_details: {
+        customer_id:    userId,
+        customer_email: userEmail  || "student@smarty.com",
+        customer_name:  userName   || "Student",
+        customer_phone: "9999999999",
+      },
+      order_meta: {
+        return_url: returnUrl || `${process.env.FRONTEND_URL}/?pro=success&order_id={order_id}`,
+        notify_url: `${process.env.BACKEND_URL}/webhook/cashfree`,
+      },
+    };
+
+    const cfRes = await fetch(`${CF_BASE_URL}/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type":    "application/json",
+        "x-api-version":   CF_VERSION,
+        "x-client-id":     CF_APP_ID,
+        "x-client-secret": CF_SECRET,
+      },
+      body: JSON.stringify(orderPayload),
+    });
+
+    const cfData = await cfRes.json();
+    if (!cfRes.ok) {
+      console.error("Cashfree pro order failed:", cfData);
+      return res.status(500).json({ error: cfData.message || "Failed to create order" });
+    }
+
+    // Save pending pro order — courseId = "all" signals webhook to unlock everything
+    await db.collection("orders").doc(orderId).set({
+      orderId,
+      courseId: "all", // special flag — unlock all courses on payment
+      userId,
+      amount: 19,
+      status: "pending",
+      plan:   "pro",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    res.json({
+      orderId:          cfData.order_id,
+      paymentSessionId: cfData.payment_session_id,
+    });
+
+  } catch (error) {
+    console.error("Create pro order error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Verify Pro Payment (called after redirect) ───────────────────────────────
+app.get("/verify-pro-payment/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const cfRes = await fetch(`${CF_BASE_URL}/orders/${orderId}`, {
+      method: "GET",
+      headers: {
+        "x-api-version":   CF_VERSION,
+        "x-client-id":     CF_APP_ID,
+        "x-client-secret": CF_SECRET,
+      },
+    });
+
+    const cfData = await cfRes.json();
+    console.log(`Verify pro payment for ${orderId}:`, cfData.order_status);
+
+    if (cfData.order_status === "PAID") {
+      await grantCourseAccess(orderId);
+      return res.json({ status: "paid" });
+    }
+
+    res.json({ status: cfData.order_status?.toLowerCase() || "pending" });
+
+  } catch (error) {
+    console.error("Verify pro payment error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // ─── Start server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;

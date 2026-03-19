@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const paths = [
   {
     goal: "AI Engineer",
+    courseId: 1, // Complete AI & Machine Learning Bootcamp
     steps: [
       { title: "Python Fundamentals", done: true },
       { title: "Mathematics for ML", done: true },
@@ -14,6 +16,7 @@ const paths = [
   },
   {
     goal: "Full-Stack Developer",
+    courseId: 2, // MERN Stack (free)
     steps: [
       { title: "HTML, CSS & JavaScript", done: true },
       { title: "React & TypeScript", done: true },
@@ -24,6 +27,7 @@ const paths = [
   },
   {
     goal: "Cloud Architect",
+    courseId: 3, // AWS Solutions Architect
     steps: [
       { title: "Networking Fundamentals", done: true },
       { title: "Linux & Scripting", done: false },
@@ -35,6 +39,8 @@ const paths = [
 ];
 
 export function LearningPaths() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative z-10 py-20 px-4 bg-background">
       <div className="max-w-6xl mx-auto">
@@ -82,7 +88,10 @@ export function LearningPaths() {
                 ))}
               </div>
 
-              <button className="mt-6 flex items-center gap-2 text-sm text-primary font-medium group-hover:gap-3 transition-all">
+              <button
+                onClick={() => navigate(`/course/${path.courseId}`)}
+                className="mt-6 flex items-center gap-2 text-sm text-primary font-medium group-hover:gap-3 transition-all"
+              >
                 Start this path <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>

@@ -183,7 +183,7 @@ export default function CourseDetail() {
     setEnrolling(true);
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const returnUrl = `${window.location.origin}${base}/course/${course.id}?payment=success&order_id={order_id}`;
+      const returnUrl = window.location.origin + base + "/#/course/" + course.id + "?payment=success&order_id={order_id}";
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/create-order`, {
         method: "POST",

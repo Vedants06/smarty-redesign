@@ -1,5 +1,11 @@
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
+import { useState } from "react";
+import { load } from "@cashfreepayments/cashfree-js";
+
+const ALL_COURSE_IDS = [1, 2, 3, 4, 5, 6];
 
 const plans = [
   {
@@ -8,13 +14,14 @@ const plans = [
     period: "forever",
     description: "Get started with core courses",
     features: [
-      "Access to 50+ free courses",
+      "Access to MERN Stack course (free)",
       "Community forum access",
       "Basic progress tracking",
       "Mobile app access",
     ],
     cta: "Start Free",
     highlighted: false,
+    key: "free",
   },
   {
     name: "Pro",
@@ -22,7 +29,7 @@ const plans = [
     period: "/month",
     description: "Unlimited learning, accelerated growth",
     features: [
-      "All 200+ courses",
+      "All 6 courses unlocked instantly",
       "Smarty AI tutor — unlimited",
       "Certificates of completion",
       "Offline downloads",
@@ -31,6 +38,7 @@ const plans = [
     ],
     cta: "Go Pro",
     highlighted: true,
+    key: "pro",
   },
   {
     name: "Teams",
@@ -47,6 +55,7 @@ const plans = [
     ],
     cta: "Contact Sales",
     highlighted: false,
+    key: "teams",
   },
 ];
 
@@ -61,8 +70,66 @@ const item = {
 };
 
 export function Pricing() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const handleCTA = async (planKey: string) => {
+    if (planKey === "free") {
+      // Redirect directly to the free MERN course
+      navigate("/course/2");
+      return;
+    }
+
+    if (planKey === "teams") {
+      // Open mail client for sales contact
+      window.location.href = "mailto:sales@smarty.com?subject=Teams Plan Inquiry&body=Hi, I'm interested in the Smarty Teams plan.";
+      return;
+    }
+
+    // Pro plan — Cashfree checkout
+    if (!user) {
+      navigate("/login?redirect=/#pricing");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const returnUrl = window.location.origin + base + "/#/?pro=success&order_id={order_id}";
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/create-pro-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId:    user.uid,
+          userEmail: user.email,
+          userName:  user.displayName,
+          returnUrl,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.paymentSessionId) throw new Error(data.error || "No session ID");
+
+      const cashfree = await load({
+        mode: (import.meta.env.VITE_CASHFREE_ENV as "sandbox" | "production") || "sandbox",
+      });
+
+      cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget:   "_self",
+      });
+
+    } catch (err) {
+      console.error("Pro checkout error:", err);
+      alert("Payment could not be initiated. Please try again.");
+      setLoading(false);
+    }
+  };
+
   return (
-    <section className="relative z-10 py-20 px-4 bg-background">
+    <section id="pricing" className="relative z-10 py-20 px-4 bg-background">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -118,13 +185,16 @@ export function Pricing() {
               </ul>
 
               <button
-                className={`w-full py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 ${
+                onClick={() => handleCTA(plan.key)}
+                disabled={loading && plan.key === "pro"}
+                className={`w-full py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
                   plan.highlighted
                     ? "gradient-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground"
                 }`}
               >
-                {plan.cta}
+                {loading && plan.key === "pro" && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading && plan.key === "pro" ? "Opening payment…" : plan.cta}
               </button>
             </motion.div>
           ))}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/lib/auth-context";
 
 const links = ["Courses", "Paths", "For Business", "Community"];
 
@@ -13,6 +14,7 @@ interface NavbarProps {
 export function Navbar({ onScrollToSection }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const { user, logout } = useAuth();
 
   const handleNavClick = (link: string) => {
     onScrollToSection(link);
@@ -48,18 +50,36 @@ export function Navbar({ onScrollToSection }: NavbarProps) {
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-          <Link
-            to="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/signup"
-            className="gradient-primary text-primary-foreground text-sm font-medium px-5 py-2 rounded-xl hover:opacity-90 transition-opacity"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <>
+              <Link to="/profile" className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3">
+                {user.displayName || user.email}
+              </Link>
+              <button
+                onClick={async () => {
+                  await logout();
+                }}
+                className="text-sm text-destructive hover:text-destructive-foreground transition-colors px-3"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="gradient-primary text-primary-foreground text-sm font-medium px-5 py-2 rounded-xl hover:opacity-90 transition-opacity"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -91,20 +111,43 @@ export function Navbar({ onScrollToSection }: NavbarProps) {
                 </button>
               ))}
               <div className="pt-4 space-y-3">
-                <Link
-                  to="/login"
-                  className="block w-full text-center gradient-secondary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
-                  className="block w-full gradient-primary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Get Started
-                </Link>
+                {user ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      className="block w-full text-center gradient-secondary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {user.displayName || user.email}
+                    </Link>
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        setMobileOpen(false);
+                      }}
+                      className="block w-full bg-red-100 text-red-600 text-sm font-medium px-5 py-3 rounded-xl"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="block w-full text-center gradient-secondary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="block w-full gradient-primary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
                 <button 
                   onClick={toggle}
                   className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"

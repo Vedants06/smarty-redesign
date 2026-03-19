@@ -27,10 +27,21 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setError(null);
     try {
-      await loginWithEmail(data.email, data.password);
+      await loginWithEmail(data.email.trim(), data.password);
       navigate("/");
-    } catch (err) {
-      setError("Sign in failed. Please check email/password and try again.");
+    } catch (err: any) {
+      const code = err?.code || "";
+      const message =
+        code === "auth/user-not-found"
+          ? "No account found with that email."
+          : code === "auth/wrong-password"
+          ? "Incorrect password."
+          : code === "auth/invalid-email"
+          ? "Invalid email address."
+          : code === "auth/invalid-credential"
+          ? "Invalid credentials; check your login details."
+          : "Sign in failed. Please try again.";
+      setError(message);
       console.error(err);
     }
   };

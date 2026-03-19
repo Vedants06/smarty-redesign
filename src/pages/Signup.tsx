@@ -28,10 +28,21 @@ const Signup = () => {
   const onSubmit = async (data: SignupFormValues) => {
     setError(null);
     try {
-      await signupWithEmail(data.email, data.password, data.name);
+      await signupWithEmail(data.email.trim(), data.password, data.name.trim());
       navigate("/");
-    } catch (err) {
-      setError("Sign up failed. Please check credentials and try again.");
+    } catch (err: any) {
+      const code = err?.code || "";
+      const message =
+        code === "auth/email-already-in-use"
+          ? "That email is already in use."
+          : code === "auth/weak-password"
+          ? "Password too weak; choose 6+ characters."
+          : code === "auth/invalid-email"
+          ? "Invalid email address."
+          : code === "auth/configuration-not-found"
+          ? "Firebase configuration missing. Check your .env and console settings."
+          : "Sign up failed. Please try again.";
+      setError(message);
       console.error(err);
     }
   };

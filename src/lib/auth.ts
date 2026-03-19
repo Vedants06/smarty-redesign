@@ -28,3 +28,7 @@ export const loginWithEmail = async (email: string, password: string) => {
   const userCred = await signInWithEmailAndPassword(auth, email, password);
   return userCred.user;
 };
+
+export const signOutUser = async () => {
+  await signOut(auth);
+};

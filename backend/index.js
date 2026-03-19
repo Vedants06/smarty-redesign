@@ -12,14 +12,25 @@ app.use(cors());
 app.use(express.json());
 
 // ─── Firebase Admin ──────────────────────────────────────────────────────────
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  console.warn("WARNING: GOOGLE_APPLICATION_CREDENTIALS is not set.");
-}
+
 try {
-  admin.initializeApp();
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Railway — JSON string in env var
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    console.log("Firebase initialized via FIREBASE_SERVICE_ACCOUNT");
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    // Local dev — path to JSON file
+    admin.initializeApp();
+    console.log("Firebase initialized via GOOGLE_APPLICATION_CREDENTIALS");
+  } else {
+    console.warn("WARNING: No Firebase credentials found. Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS.");
+    admin.initializeApp();
+  }
 } catch (error) {
-  console.warn("Firebase Admin could not initialize:", error);
+  console.warn("Firebase Admin could not initialize:", error.message);
 }
+
 const db = admin.firestore();
 
 // ─── Cashfree Config ─────────────────────────────────────────────────────────
@@ -78,7 +89,6 @@ app.post("/create-order", async (req, res) => {
         customer_phone: "9999999999",
       },
       order_meta: {
-        // returnUrl comes from frontend so it knows its own base path
         return_url: returnUrl || `${process.env.FRONTEND_URL}/course/${courseId}?payment=success&order_id={order_id}`,
         notify_url: `${process.env.BACKEND_URL}/webhook/cashfree`,
       },
@@ -102,7 +112,6 @@ app.post("/create-order", async (req, res) => {
       return res.status(500).json({ error: cfData.message || "Failed to create order" });
     }
 
-    // Save pending order to Firestore
     await db.collection("orders").doc(orderId).set({
       orderId,
       courseId,
@@ -154,13 +163,11 @@ app.post("/webhook/cashfree", async (req, res) => {
   }
 });
 
-// ─── Verify payment (called by frontend after redirect) ───────────────────────
-// This is the primary unlock mechanism since webhooks don't work on localhost
+// ─── Verify payment ───────────────────────────────────────────────────────────
 app.get("/verify-payment/:orderId", async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    // Ask Cashfree if this order is actually paid
     const cfRes = await fetch(`${CF_BASE_URL}/orders/${orderId}`, {
       method: "GET",
       headers: {
@@ -186,6 +193,7 @@ app.get("/verify-payment/:orderId", async (req, res) => {
   }
 });
 
+// ─── Shared helper: grant course access ──────────────────────────────────────
 const ALL_COURSE_IDS = [1, 2, 3, 4, 5, 6];
 
 async function grantCourseAccess(orderId) {
@@ -197,33 +205,28 @@ async function grantCourseAccess(orderId) {
 
   const { userId, courseId, status } = orderDoc.data();
 
-  // Idempotent — skip if already processed
   if (status === "paid") {
     console.log(`Order ${orderId} already processed`);
     return;
   }
 
-  // Mark order as paid
   await db.collection("orders").doc(orderId).update({
     status: "paid",
     paidAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  // "all" = Pro plan, unlock every course
   const coursesToUnlock = courseId === "all" ? ALL_COURSE_IDS : [courseId];
 
   await db.collection("users").doc(userId).set({
     purchasedCourses: admin.firestore.FieldValue.arrayUnion(...coursesToUnlock),
-    ...(courseId === "all" && { plan: "pro" }), // tag the user as pro
+    ...(courseId === "all" && { plan: "pro" }),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
 
   console.log(`✅ Unlocked courses [${coursesToUnlock}] for user ${userId}`);
 }
 
-// ─── Create Pro Subscription Order (unlocks ALL courses) ─────────────────────
-// Add this to index.js before app.listen()
-
+// ─── Create Pro Order ─────────────────────────────────────────────────────────
 app.post("/create-pro-order", async (req, res) => {
   try {
     const { userId, userEmail, userName, returnUrl } = req.body;
@@ -234,7 +237,7 @@ app.post("/create-pro-order", async (req, res) => {
 
     const orderPayload = {
       order_id:       orderId,
-      order_amount:   19, // Pro plan price in INR (update for live)
+      order_amount:   19,
       order_currency: "INR",
       order_note:     "Smarty Pro — All Courses Access",
       customer_details: {
@@ -266,10 +269,9 @@ app.post("/create-pro-order", async (req, res) => {
       return res.status(500).json({ error: cfData.message || "Failed to create order" });
     }
 
-    // Save pending pro order — courseId = "all" signals webhook to unlock everything
     await db.collection("orders").doc(orderId).set({
       orderId,
-      courseId: "all", // special flag — unlock all courses on payment
+      courseId: "all",
       userId,
       amount: 19,
       status: "pending",
@@ -288,7 +290,7 @@ app.post("/create-pro-order", async (req, res) => {
   }
 });
 
-// ─── Verify Pro Payment (called after redirect) ───────────────────────────────
+// ─── Verify Pro Payment ───────────────────────────────────────────────────────
 app.get("/verify-pro-payment/:orderId", async (req, res) => {
   try {
     const { orderId } = req.params;

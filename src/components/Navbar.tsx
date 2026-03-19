@@ -1,5 +1,6 @@
 import { GraduationCap, Menu, X, Sun, Moon } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -47,12 +48,18 @@ export function Navbar({ onScrollToSection }: NavbarProps) {
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-          <button className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3">
+          <Link
+            to="/login"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3"
+          >
             Sign In
-          </button>
-          <button className="gradient-primary text-primary-foreground text-sm font-medium px-5 py-2 rounded-xl hover:opacity-90 transition-opacity">
+          </Link>
+          <Link
+            to="/signup"
+            className="gradient-primary text-primary-foreground text-sm font-medium px-5 py-2 rounded-xl hover:opacity-90 transition-opacity"
+          >
             Get Started
-          </button>
+          </Link>
         </div>
 
         {/* Mobile toggle */}
@@ -84,9 +91,20 @@ export function Navbar({ onScrollToSection }: NavbarProps) {
                 </button>
               ))}
               <div className="pt-4 space-y-3">
-                <button className="w-full gradient-primary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl">
+                <Link
+                  to="/login"
+                  className="block w-full text-center gradient-secondary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="block w-full gradient-primary text-primary-foreground text-sm font-medium px-5 py-3 rounded-xl"
+                  onClick={() => setMobileOpen(false)}
+                >
                   Get Started
-                </button>
+                </Link>
                 <button 
                   onClick={toggle}
                   className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"

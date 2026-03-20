@@ -1,4 +1,4 @@
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
@@ -6,14 +6,15 @@ import { db } from "@/lib/firebase";
 import { courses } from "@/lib/courseData";
 import { Navbar } from "@/components/Navbar";
 import { MobileNav } from "@/components/MobileNav";
-import { Play, Lock, User, Mail, BookOpen, Sparkles, Trophy } from "lucide-react";
+import { Play, Lock, User, Mail, BookOpen, Sparkles, Trophy, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Profile = () => {
   const { user, loading } = useAuth();
-  const [purchasedIds, setPurchasedIds]       = useState<number[]>([]);
-  const [isPro, setIsPro]                     = useState(false);
-  const [loadingCourses, setLoadingCourses]   = useState(true);
+  const navigate = useNavigate();
+  const [purchasedIds, setPurchasedIds]     = useState<number[]>([]);
+  const [isPro, setIsPro]                   = useState(false);
+  const [loadingCourses, setLoadingCourses] = useState(true);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -43,7 +44,7 @@ const Profile = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const myCourses    = courses.filter(c => c.isFree || purchasedIds.includes(c.id));
+  const myCourses     = courses.filter(c => c.isFree || purchasedIds.includes(c.id));
   const lockedCourses = courses.filter(c => !c.isFree && !purchasedIds.includes(c.id));
 
   return (
@@ -51,6 +52,14 @@ const Profile = () => {
       <Navbar />
       <main className="min-h-screen bg-background pt-20 pb-16 md:pb-0 px-4">
         <div className="max-w-4xl mx-auto py-10 space-y-8">
+
+          {/* ── Back button ── */}
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
 
           {/* ── Profile Card ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-6 md:p-8">
@@ -176,7 +185,9 @@ const Profile = () => {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-foreground">Available to Unlock</h2>
-                <Link to="/#pricing" className="text-xs text-primary font-medium hover:underline">
+                <Link to="/" className="text-xs text-primary font-medium hover:underline"
+                  onClick={() => setTimeout(() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }), 100)}
+                >
                   View Pro plan →
                 </Link>
               </div>
@@ -220,10 +231,8 @@ const Profile = () => {
                 </div>
                 <Link
                   to="/"
+                  onClick={() => setTimeout(() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }), 100)}
                   className="gradient-primary text-primary-foreground text-sm font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity shrink-0"
-                  onClick={() => setTimeout(() => {
-                    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
-                  }, 100)}
                 >
                   Go Pro →
                 </Link>
@@ -233,7 +242,7 @@ const Profile = () => {
 
         </div>
       </main>
-      <MobileNav />
+      <MobileNav onScrollToSection={() => {}} />
     </>
   );
 };
